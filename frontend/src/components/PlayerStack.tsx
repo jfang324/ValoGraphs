@@ -1,79 +1,92 @@
+import PlayerEntry from '@/components/PlayerEntry'
+import { validateNameTag } from '@/lib/utils'
+import { useState } from 'react'
 import { Stack } from 'react-bootstrap'
 import { FaPlus } from 'react-icons/fa'
-import PlayerEntry from './PlayerEntry'
 
 /**
- * playerMap - A dictionary that maps player names to their match data & visibility
- * handleAdd - A function that retrieves data for the name#tag in the text input
- * handleToggle - A generic function that toggles visibility of a playerEntry
- * handleDelete - A generic function that deletes a playerEntry
+ * PlayerStack component props
+ *
+ * @params playerMap - A dictionary that maps player#tag to their visibility and region
+ * @params handleAdd - A function that retrieves data for the player#tag in the text input
+ * @params handleToggle - A generic function that toggles visibility of a player
+ * @params handleDelete - A generic function that deletes a player
  */
 interface PlayerStackProps {
-    playerMap: { [playerName: string]: any }
-    handleAdd: () => void
-    handleToggle: (name: string) => void
-    handleDelete: (name: string) => void
+    playerMap: { [nameTag: string]: { region: string; visible: boolean } }
+    handleAddPlayer: (nameTag: string) => void
+    handleToggle: (nameTag: string) => void
+    handleDelete: (nameTag: string) => void
 }
 
-export default function PlayerStack({ playerMap, handleAdd, handleToggle, handleDelete }: PlayerStackProps) {
+const PlayerStack = ({ playerMap, handleAddPlayer, handleToggle, handleDelete }: PlayerStackProps) => {
+    const [nameTag, setNameTag] = useState('')
+
+    //Validate the input has the correct format
+    const validateInput = () => {
+        if (!validateNameTag(nameTag)) {
+            alert('Invalid Input')
+            return false
+        }
+        if (nameTag in playerMap) {
+            alert('Player is already graphed')
+            return false
+        }
+        return true
+    }
+
     return (
-        <>
-            <Stack
-                className="border-top border-secondary border-2 d-block"
-                style={{
-                    minWidth: '20%',
-                    overflowY: 'auto',
-                }}
-            >
-                {Object.keys(playerMap).map((player: string) => {
-                    return (
-                        <PlayerEntry
-                            nameAndTag={player}
-                            handleToggle={() => handleToggle(player)}
-                            handleDelete={() => handleDelete(player)}
-                            handleSearch={() => {
-                                let temp = player.split('#')
-                                window.open(
-                                    `/profile/${playerMap[player].region.toLowerCase()}/${temp[0]}/${temp[1]}`,
-                                    '_blank'
-                                )
-                            }}
-                            visible={playerMap[player].visible}
-                            key={player}
-                        ></PlayerEntry>
-                    )
-                })}
-                <Stack
-                    direction="horizontal"
-                    className="p-2 border-bottom border-end border-secondary border-2"
-                    gap={2}
-                >
-                    <FaPlus className="invisible"></FaPlus>
-                    <div className="vr text-light"></div>
-                    <input
-                        className="bg-transparent"
-                        spellCheck="false"
-                        autoComplete="off"
-                        placeholder={
-                            Object.keys(playerMap).length > 0 ? 'player name#tag' : 'player name#tag ex. SEN TenZ#81619'
-                        }
-                        style={{
-                            width: '100%',
-                            border: 'none',
-                            outline: 'none',
-                            fontFamily: 'Courier New, monospace',
-                            fontSize: '16px',
-                            color: 'white',
-                        }}
-                        id="newPlayerInput"
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                handleAdd()
+        <Stack
+            className="border-top border-secondary border-2 h-100"
+            style={{
+                fontFamily: 'Courier New, monospace',
+            }}
+        >
+            {Object.keys(playerMap).map((existingNameTag: string) => (
+                <PlayerEntry
+                    key={existingNameTag}
+                    nameTag={existingNameTag}
+                    handleToggle={() => handleToggle(existingNameTag)}
+                    handleDelete={() => handleDelete(existingNameTag)}
+                    handleSearch={() => {
+                        let [name, tag] = existingNameTag.split('#')
+                        window.open(
+                            `/profile/${playerMap[existingNameTag].region.toLowerCase()}/${name}/${tag}`,
+                            '_blank'
+                        )
+                    }}
+                    visible={playerMap[existingNameTag].visible}
+                />
+            ))}
+            <Stack direction="horizontal" className="p-2 border-bottom border-end border-secondary border-2" gap={2}>
+                <FaPlus className="invisible"></FaPlus>
+                <div className="vr text-light"></div>
+                <input
+                    className="bg-transparent flex-grow-1"
+                    spellCheck="false"
+                    autoComplete="off"
+                    value={nameTag}
+                    onChange={(e) => setNameTag(e.target.value)}
+                    placeholder={
+                        Object.keys(playerMap).length > 0 ? 'player name#tag' : 'player name#tag ex. SEN TenZ#81619'
+                    }
+                    style={{
+                        border: 'none',
+                        outline: 'none',
+                        color: 'white',
+                    }}
+                    id="newPlayerInput"
+                    onKeyDown={async (e) => {
+                        if (e.key === 'Enter') {
+                            if (validateInput()) {
+                                await handleAddPlayer(nameTag.trim())
+                                setNameTag('')
                             }
-                        }}
-                    ></input>
-                </Stack>
+                        }
+                    }}
+                ></input>
             </Stack>
-        </>
+        </Stack>
     )
 }
+export default PlayerStack

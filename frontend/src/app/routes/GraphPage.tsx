@@ -1,136 +1,153 @@
-import { Container } from 'react-bootstrap'
+import GraphContainer from '@/components/GraphContainer'
+import Header from '@/components/Header'
+import PlayerStack from '@/components/PlayerStack'
+import { regions } from '@/lib/constants'
+import { openPlayerProfile, retrievePlayerData } from '@/lib/utils'
 import { useState } from 'react'
-import Header from '../../components/Header'
-import PlayerStack from '../../components/PlayerStack'
-import GraphContainer from '../../components/GraphContainer'
-import { retrievePlayerData, handleProfileSearch } from '../../utils/commonFunctions'
+import { Col, Container, Row } from 'react-bootstrap'
 
-const gameModes: string[] = ['unrated', 'competitive', 'team deathmatch']
-const regions: string[] = ['NA', 'EU', 'LATAM', 'BR', 'AP', 'KR']
-
-function GraphPage() {
-    /**
-     * currentMode - The current mode being displayed, when match data is retrieved it will for matches of this type
-     * currentRegion - The region that any new player being added will be from
-     * playerMap - A dictionary mapping a player name to an array of their match data
-     */
+const GraphPage = () => {
     const [currentMode, setCurrentMode] = useState('competitive')
     const [currentRegion, setCurrentRegion] = useState('NA')
-    const [playerMap, setPlayerMap] = useState<{ [playerName: string]: any }>({})
+    const [playerMap, setPlayerMap] = useState<{
+        [playerName: string]: { region: string; visible: boolean; data: any[] }
+    }>({})
 
     /**
-     * Retrieves match data for the new player if the input is valid
+     * Handles the 'search' for a player's profile
+     *
+     * @param nameTag - The name and tag of the player in the format name#tag
+     * @param region - The region of the player
      */
-    async function handleAdd(): Promise<void> {
-        let input: HTMLInputElement = document.getElementById('newPlayerInput') as HTMLInputElement
+    const handleProfileSearch = (nameTag: string, region: string) => {
+        if (!nameTag || !region) {
+            alert('Missing required parameters')
+            return
+        }
 
-        if (input && input.value.includes('#')) {
-            let inputValue: string = input.value.trim()
+        try {
+            openPlayerProfile(nameTag, region)
+        } catch (error) {
+            alert(error)
+        }
+    }
 
-            if (Object.keys(playerMap).includes(inputValue)) {
-                alert('Player is already graphed')
-            } else {
-                let response: any = await retrievePlayerData(inputValue, currentMode, currentRegion)
+    /**
+     * Handles the change of the game mode
+     *
+     * @param mode - The game mode to change to
+     */
+    const handleChangeMode = async (mode: string) => {
+        if (currentMode === mode) return
 
-                if (response.status === 200) {
-                    let data = await response.json()
-                    let newPlayerMap = { ...playerMap }
-                    newPlayerMap[inputValue] = { visible: true, data: data, region: currentRegion }
-                    input.value = ''
+        const newPlayerMap: any = {}
 
-                    setPlayerMap(newPlayerMap)
+        await Promise.all(
+            Object.keys(playerMap).map(async (player) => {
+                newPlayerMap[player] = {
+                    visible: playerMap[player].visible,
+                    region: playerMap[player].region,
+                    data: [],
                 }
-            }
-        } else {
-            alert('Invalid Input')
-        }
-    }
 
-    /**
-     * Updates the match data for all players if the new mode is different from the current mode
-     *
-     * @param mode - The mode that the new data will be associated with
-     */
-    async function handleChangeMode(mode: string): Promise<void> {
-        if (currentMode != mode) {
-            let newPlayerMap = { ...playerMap }
-
-            for (let player of Object.keys(playerMap)) {
-                let response = await retrievePlayerData(player, mode, playerMap[player].region)
-
-                if (response.status === 200) {
-                    let data = await response.json()
-                    newPlayerMap[player].data = data
-                } else {
-                    newPlayerMap[player].data = []
+                try {
+                    const playerData = await retrievePlayerData(player, mode, playerMap[player].region)
+                    newPlayerMap[player].data = playerData
+                } catch (error) {
+                    alert(`Failed to retrieve ${mode} data for ${player}`)
                 }
-            }
+            })
+        )
 
-            setPlayerMap(newPlayerMap)
-            setCurrentMode(mode)
-        }
-    }
-
-    function handleChangeRegion(region: string): void {
-        setCurrentRegion(region)
+        setPlayerMap(newPlayerMap)
+        setCurrentMode(mode)
     }
 
     /**
-     * Deletes the data of the specified player
+     * Handles the change of the region
      *
-     * @param name - The name of the player whose data is to be deleted
+     * @param region - The region to change to
      */
-    function handleDelete(name: string): void {
-        let newPlayerMap = { ...playerMap }
+    const handleChangeRegion = (region: string) => setCurrentRegion(region)
 
-        if (Object.keys(newPlayerMap).includes(name)) {
-            delete newPlayerMap[name]
+    /**
+     * Handles the addition of a player to the graphs
+     *
+     * @param nameTag - The name and tag of the player in the format name#tag
+     */
+    const handleAddPlayer = async (nameTag: string) => {
+        if (!nameTag || !currentMode || !currentRegion) {
+            alert('Missing required parameters')
+            return
         }
-        setPlayerMap(newPlayerMap)
+
+        try {
+            const playerData = await retrievePlayerData(nameTag, currentMode, currentRegion)
+            setPlayerMap((prev) => ({
+                ...prev,
+                [nameTag]: { visible: true, data: playerData, region: currentRegion },
+            }))
+        } catch (error) {
+            setPlayerMap((prev) => ({
+                ...prev,
+                [nameTag]: { visible: true, data: [], region: currentRegion },
+            }))
+            alert(error)
+        }
     }
 
     /**
-     * Toggles visibility of lines associated with the name
+     * Handles the deletion of a player from the graphs
      *
-     * @param name - The name of the player whose data visibility is to be toggles
+     * @param nameTag - The name and tag of the player in the format name#tag
      */
-    function handleToggle(name: string): void {
-        let newPlayerMap = { ...playerMap }
-
-        if (Object.keys(newPlayerMap).includes(name)) {
-            newPlayerMap[name].visible = !newPlayerMap[name].visible
-        }
-        setPlayerMap(newPlayerMap)
+    const handleDelete = (nameTag: string) => {
+        setPlayerMap((prev) => {
+            const newMap = { ...prev }
+            delete newMap[nameTag]
+            return newMap
+        })
     }
 
-    //A javascript object that maps text to handlers, to be used by the Header component
-    //to determine what option are available in the offcanvas
-    const handlerMap: { [id: string]: any } = {
-        'Back to Homepage': '/',
-        'View Profile Page': handleProfileSearch,
-        'Change Game Mode': handleChangeMode,
-        'View GitHub Repository': import.meta.env.VITE_GITHUB_LINK,
+    /**
+     * Handles the toggling of a player's visibility
+     *
+     * @param nameTag - The name and tag of the player in the format name#tag
+     */
+    const handleToggle = (nameTag: string) => {
+        setPlayerMap((prev) => ({
+            ...prev,
+            [nameTag]: { ...prev[nameTag], visible: !prev[nameTag].visible },
+        }))
     }
 
     return (
-        <>
-            <Container fluid className="p-0 vh-100 d-flex flex-wrap bg-dark overflow-x-hidden">
-                <Header
-                    handlerMap={handlerMap}
-                    gameModes={gameModes}
-                    regions={regions}
-                    currentRegion={currentRegion}
-                    handleChangeRegion={handleChangeRegion}
-                ></Header>
-                <PlayerStack
-                    playerMap={playerMap}
-                    handleAdd={handleAdd}
-                    handleDelete={handleDelete}
-                    handleToggle={handleToggle}
-                ></PlayerStack>
-                <GraphContainer playerMap={playerMap}></GraphContainer>
-            </Container>
-        </>
+        <Container fluid className="p-0 vh-100 d-flex flex-column overflow-x-hidden">
+            <Header
+                currentRegion={currentRegion}
+                regions={regions}
+                handleProfileSearch={handleProfileSearch}
+                handleChangeMode={handleChangeMode}
+                handleChangeRegion={handleChangeRegion}
+            />
+            <Row className="flex-grow-1 m-0">
+                <Col xs={12} lg="auto" className="p-0 player-stack-col" style={{ width: '100%', maxWidth: '400px' }}>
+                    <div className="scrollable-content">
+                        <PlayerStack
+                            playerMap={playerMap}
+                            handleAddPlayer={handleAddPlayer}
+                            handleDelete={handleDelete}
+                            handleToggle={handleToggle}
+                        />
+                    </div>
+                </Col>
+                <Col xs={12} lg className="p-0 graph-container-col">
+                    <div className="scrollable-content">
+                        <GraphContainer playerMap={playerMap} />
+                    </div>
+                </Col>
+            </Row>
+        </Container>
     )
 }
 

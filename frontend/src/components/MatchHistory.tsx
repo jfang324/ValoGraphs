@@ -1,4 +1,4 @@
-import { Stack, Form, Button } from 'react-bootstrap'
+import { Button, Form, Stack } from 'react-bootstrap'
 import { LuRefreshCw } from 'react-icons/lu'
 import MatchEntry from './MatchEntry'
 
@@ -40,7 +40,7 @@ export default function MatchHistory({
                             spellCheck="false"
                             autoComplete="off"
                             placeholder="Filter by agent or map name"
-                            className="bg-dark border-secondary"
+                            className="border-secondary"
                             aria-label="Search"
                             id="agentSearchInput"
                             data-bs-theme="dark"
@@ -64,7 +64,7 @@ export default function MatchHistory({
                         <LuRefreshCw />
                     </Button>
                 </Stack>
-                <div className="bg-dark border-bottom border-secondary border-2">
+                <div className="border-bottom border-secondary border-2">
                     {data.map((match: any) => {
                         const agentRegex = new RegExp(filter, 'i')
                         const mapRegex = new RegExp(filter, 'i')

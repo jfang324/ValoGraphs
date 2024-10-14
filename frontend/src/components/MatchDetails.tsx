@@ -1,4 +1,4 @@
-import { Offcanvas, Stack, Image } from 'react-bootstrap'
+import { Image, Offcanvas, Stack } from 'react-bootstrap'
 
 /**
  * matchDetails - An array of objects representing each unique players performance this match
@@ -36,16 +36,6 @@ export default function MatchDetails({
 
     return (
         <>
-            <style>
-                {`
-                @media only screen and (max-width: 1000px) {
-                    .disappear {
-                        visibility: hidden;
-                    }
-                }
-                `}
-            </style>
-
             <Offcanvas
                 className="vh-100 vw-100"
                 placement="bottom"

@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { Container } from 'react-bootstrap'
+import { useParams } from 'react-router-dom'
 import Header from '../../components/Header'
-import ProfileColumn from '../../components/ProfileColumn'
-import MatchHistory from '../../components/MatchHistory'
 import MatchDetails from '../../components/MatchDetails'
+import MatchHistory from '../../components/MatchHistory'
+import ProfileColumn from '../../components/ProfileColumn'
 import {
-    handleProfileSearch,
-    retrievePlayerData,
-    retrieveMatchData,
     calculateAverageStats,
     countMatchsPerDay,
+    handleProfileSearch,
+    retrieveMatchData,
+    retrievePlayerData,
     retrieveProfileData,
 } from '../../utils/commonFunctions'
 
@@ -257,7 +257,7 @@ function ProfilePage() {
 
     return (
         <>
-            <Container fluid className="p-0 vh-100 bg-dark overflow-y-auto">
+            <Container fluid className="p-0 vh-100 overflow-y-auto">
                 <Header
                     handlerMap={handlerMap}
                     gameModes={gameModes}

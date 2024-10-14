@@ -1,124 +1,87 @@
-import { Stack } from 'react-bootstrap'
-import Graph from './Graph'
-import { stringToColour } from '../utils/commonFunctions'
+import Graph from '@/components/Graph'
+import { stringToColor } from '@/lib/utils'
+import { Col, Row } from 'react-bootstrap'
 
 /**
- * playerMap - A dictionary that maps player names to their match data & visibility
+ * GraphContainer component props
+ *
+ * @params playerMap - A dictionary that maps player#tag to their match data & visibility
  */
 interface GraphContainerProps {
-    playerMap: { [playerName: string]: any }
+    playerMap: { [nameTag: string]: any }
 }
 
-export default function GraphContainer({ playerMap }: GraphContainerProps) {
-    let hsData: { [playerName: string]: number }[] = []
-    let kdData: { [playerName: string]: number }[] = []
-    let kdaData: { [playerName: string]: number }[] = []
-    let adrData: { [playerName: string]: number }[] = []
-    let acsData: { [playerName: string]: number }[] = []
-    let ddData: { [playerName: string]: number }[] = []
-    let playersColors: { [playerName: string]: string } = {}
+const GraphContainer = ({ playerMap }: GraphContainerProps) => {
+    const graphData = [
+        { title: 'Headshot Percentage', unit: 'HS %', reference: 20, dataKey: 'hs' },
+        { title: 'Kill Death Ratio', unit: 'KDR', reference: 0.9, dataKey: 'kd' },
+        { title: 'Kills, Deaths and Assists', unit: 'KDA', reference: 1.25, dataKey: 'kda' },
+        { title: 'Average Damage per Round', unit: 'ADR', reference: 130, dataKey: 'adr' },
+        { title: 'Average Contribution Score', unit: 'ACS', reference: 200, dataKey: 'acs' },
+        { title: 'Difference between damage dealt and received per round', unit: 'DD Δ', reference: 0, dataKey: 'dd' },
+    ]
 
-    for (let player of Object.keys(playerMap)) {
-        if (!playerMap[player].visible) {
-            continue
-        }
+    //split the data into a dictionary mapping name to color and a list of objects where each object represents a match
+    const prepareData = (dataKey: string) => {
+        const matchData: { [nameTag: string]: number }[] = []
+        const playersColors: { [nameTag: string]: string } = {}
 
-        playersColors[player] = stringToColour(player)
-        for (let i: number = 0; i < playerMap[player].data.length; i++) {
-            if (i >= hsData.length) {
-                hsData.push({ matchNum: i + 1 })
-                kdData.push({ matchNum: i + 1 })
-                kdaData.push({ matchNum: i + 1 })
-                adrData.push({ matchNum: i + 1 })
-                acsData.push({ matchNum: i + 1 })
-                ddData.push({ matchNum: i + 1 })
-            }
-            hsData[i][player] = Math.round(playerMap[player]['data'][i]['hs'] * 100) / 100
-            kdData[i][player] =
-                Math.round(
-                    (playerMap[player]['data'][i]['kills'] / (playerMap[player]['data'][i]['deaths'] || 1)) * 100
-                ) / 100
-            kdaData[i][player] =
-                Math.round(
-                    ((playerMap[player]['data'][i]['kills'] + playerMap[player]['data'][i]['assists']) /
-                        (playerMap[player]['data'][i]['deaths'] || 1)) *
-                        100
-                ) / 100
-            adrData[i][player] = Math.round(playerMap[player]['data'][i]['adr'] * 100) / 100
-            acsData[i][player] = Math.round(playerMap[player]['data'][i]['acs'] * 100) / 100
-            ddData[i][player] = Math.round(playerMap[player]['data'][i]['dd'] * 100) / 100
-        }
+        Object.entries(playerMap).forEach(([nameTag, playerData]) => {
+            if (!playerData.visible) return
+
+            playersColors[nameTag] = stringToColor(nameTag)
+            playerData.data.forEach((match: any, i: number) => {
+                if (i >= matchData.length) {
+                    matchData.push({ matchNum: i + 1 })
+                }
+                let value
+                switch (dataKey) {
+                    case 'hs':
+                        value = match.hs
+                        break
+                    case 'kd':
+                        value = match.kills / (match.deaths || 1)
+                        break
+                    case 'kda':
+                        value = (match.kills + match.assists) / (match.deaths || 1)
+                        break
+                    case 'adr':
+                        value = match.adr
+                        break
+                    case 'acs':
+                        value = match.acs
+                        break
+                    case 'dd':
+                        value = match.dd
+                        break
+                    default:
+                        value = 0
+                }
+                matchData[i][nameTag] = Math.round(value * 100) / 100
+            })
+        })
+
+        return { matchData, playersColors }
     }
 
     return (
-        <>
-            <Stack
-                className="d-flex pt-2"
-                style={{
-                    minWidth: '80%',
-                }}
-            >
-                <Stack direction="horizontal" className="d-flex flex-wrap" style={{ maxHeight: '33%' }}>
-                    <div className="flex-fill" style={{ minWidth: '50%' }}>
+        <Row className="g-2 px-2 py-4 mx-0 graph-row">
+            {graphData.map((graph, index) => {
+                const { matchData, playersColors } = prepareData(graph.dataKey)
+                return (
+                    <Col key={index} xs={12} md={6} className="px-2 graph-col">
                         <Graph
-                            players={playersColors}
-                            data={hsData}
-                            unit="HS %"
-                            title="Headshot Percentage"
-                            reference={20}
-                        ></Graph>
-                    </div>
-                    <div className="flex-fill" style={{ minWidth: '50%' }}>
-                        <Graph
-                            players={playersColors}
-                            data={kdData}
-                            unit="KDR"
-                            title="Kill Death Ratio"
-                            reference={0.9}
-                        ></Graph>
-                    </div>
-                </Stack>
-                <Stack direction="horizontal" className="d-flex flex-wrap" style={{ maxHeight: '33%' }}>
-                    <div className="flex-fill" style={{ minWidth: '50%' }}>
-                        <Graph
-                            players={playersColors}
-                            data={kdaData}
-                            unit="KDA"
-                            title="Kills, Deaths and Assists"
-                            reference={1.25}
-                        ></Graph>
-                    </div>
-                    <div className="flex-fill flex-fill" style={{ minWidth: '50%' }}>
-                        <Graph
-                            players={playersColors}
-                            data={adrData}
-                            unit="ADR"
-                            title="Average Damage per Round"
-                            reference={130}
-                        ></Graph>
-                    </div>
-                </Stack>
-                <Stack direction="horizontal" className="d-flex flex-wrap" style={{ maxHeight: '33%' }}>
-                    <div className="flex-fill" style={{ minWidth: '50%' }}>
-                        <Graph
-                            players={playersColors}
-                            data={acsData}
-                            unit="ACS"
-                            title="Average Contribution Score"
-                            reference={200}
-                        ></Graph>
-                    </div>
-                    <div className="flex-fill" style={{ minWidth: '50%' }}>
-                        <Graph
-                            players={playersColors}
-                            data={ddData}
-                            unit="DD Δ"
-                            title="Difference between damage dealt and received per round"
-                            reference={0}
-                        ></Graph>
-                    </div>
-                </Stack>
-            </Stack>
-        </>
+                            playerColors={playersColors}
+                            matchData={matchData}
+                            yAxisUnit={graph.unit}
+                            title={graph.title}
+                            reference={graph.reference}
+                        />
+                    </Col>
+                )
+            })}
+        </Row>
     )
 }
+
+export default GraphContainer

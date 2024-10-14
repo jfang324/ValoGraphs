@@ -1,16 +1,16 @@
-import { Stack, Image, Container } from 'react-bootstrap'
+import { Container, Image, Stack } from 'react-bootstrap'
 import {
-    RadarChart,
-    ResponsiveContainer,
-    PolarGrid,
+    Bar,
+    BarChart,
+    Label,
     PolarAngleAxis,
+    PolarGrid,
     PolarRadiusAxis,
     Radar,
+    RadarChart,
+    ResponsiveContainer,
     XAxis,
-    Label,
     YAxis,
-    BarChart,
-    Bar,
 } from 'recharts'
 
 /**
