@@ -1,38 +1,38 @@
+import MatchEntry from '@/components/MatchEntry'
+import { MatchStat } from '@/types/matchstat'
 import { Button, Form, Stack } from 'react-bootstrap'
 import { LuRefreshCw } from 'react-icons/lu'
-import MatchEntry from './MatchEntry'
 
-/**
- * data - An array of objects representing individual matches
- * imageMap - A dictionary that maps asset names to their links
- * handleFilter - A function that updates the filter base on a text input
- * filter - The filter currently being used on the matches
- * handleShowMatchDetails - A function that retrieves data for a specific match and toggles the MatchDetails components
- * handleLoadMatches - A function that retrieves data for more match entries and updates the state
- * handleUpdateProfile - A function that retrieves the most recent matches and updates the state
- */
 interface MatchHistoryProps {
-    data: any
+    matchData: MatchStat[]
     imageMap: { [id: string]: string }
-    handleFilter: () => void
     filter: string
+    handleFilter: (filter: string) => void
     handleShowMatchDetails: (match_id: string) => void
     handleLoadMatches: () => void
     handleUpdateProfile: () => void
 }
 
 export default function MatchHistory({
-    data,
+    matchData,
     imageMap,
-    handleFilter,
     filter,
+    handleFilter,
     handleShowMatchDetails,
     handleLoadMatches,
     handleUpdateProfile,
 }: MatchHistoryProps) {
     return (
         <>
-            <Stack className="h-100 flex-fill d-flex py-3" gap={3}>
+            <Stack
+                className="d-flex py-3"
+                gap={3}
+                style={{
+                    fontFamily: 'Courier New, monospace',
+                    color: 'white',
+                    fontSize: '15px',
+                }}
+            >
                 <Stack direction="horizontal" className="px-3 d-flex flex-wrap justify-content-center" gap={3}>
                     <Form className="w-75 flex-fill">
                         <Form.Control
@@ -44,28 +44,22 @@ export default function MatchHistory({
                             aria-label="Search"
                             id="agentSearchInput"
                             data-bs-theme="dark"
-                            style={{
-                                fontFamily: 'Courier New, monospace',
-                                color: 'white',
-                                fontSize: '15px',
-                            }}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                     e.preventDefault()
                                 }
                             }}
-                            onChange={() => {
-                                handleFilter()
+                            onChange={(e) => {
+                                handleFilter(e.target.value)
                             }}
                         />
                     </Form>
                     <Button variant="outline-danger" onClick={handleUpdateProfile}>
-                        Update Match History &nbsp;
-                        <LuRefreshCw />
+                        Update Match History <LuRefreshCw />
                     </Button>
                 </Stack>
                 <div className="border-bottom border-secondary border-2">
-                    {data.map((match: any) => {
+                    {matchData.map((match: any) => {
                         const agentRegex = new RegExp(filter, 'i')
                         const mapRegex = new RegExp(filter, 'i')
 

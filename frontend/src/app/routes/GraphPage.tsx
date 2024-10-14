@@ -2,7 +2,7 @@ import GraphContainer from '@/components/GraphContainer'
 import Header from '@/components/Header'
 import PlayerStack from '@/components/PlayerStack'
 import { regions } from '@/lib/constants'
-import { openPlayerProfile, retrievePlayerData } from '@/lib/utils'
+import { handleProfileSearch, retrievePlayerData } from '@/lib/utils'
 import { MatchStat } from '@/types/matchstat'
 import { PlayerMap } from '@/types/misc'
 import { useState } from 'react'
@@ -12,25 +12,6 @@ const GraphPage = () => {
     const [currentMode, setCurrentMode] = useState('competitive')
     const [currentRegion, setCurrentRegion] = useState('NA')
     const [playerMap, setPlayerMap] = useState<PlayerMap>({})
-
-    /**
-     * Handles the 'search' for a player's profile
-     *
-     * @param nameTag - The name and tag of the player in the format name#tag
-     * @param region - The region of the player
-     */
-    const handleProfileSearch = (nameTag: string, region: string) => {
-        if (!nameTag || !region) {
-            alert('Missing required parameters')
-            return
-        }
-
-        try {
-            openPlayerProfile(nameTag, region)
-        } catch (error) {
-            alert(error)
-        }
-    }
 
     /**
      * Handles the change of the game mode

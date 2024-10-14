@@ -1,4 +1,5 @@
 import { MatchStat } from '@/types/matchstat'
+import { AverageStat } from '@/types/misc'
 /**
  * Convert a input string into a color
  *
@@ -90,6 +91,25 @@ export function openPlayerProfile(nameTag: string, region: string) {
 }
 
 /**
+ * Handles the 'search' for a player's profile
+ *
+ * @param nameTag - The name and tag of the player in the format name#tag
+ * @param region - The region of the player
+ */
+export function handleProfileSearch(nameTag: string, region: string) {
+    if (!nameTag || !region) {
+        alert('Missing required parameters')
+        return
+    }
+
+    try {
+        openPlayerProfile(nameTag, region)
+    } catch (error) {
+        alert(error)
+    }
+}
+
+/**
  * Calculates the number of days between 2 dates
  *
  * @param date1 - The first day
@@ -118,7 +138,7 @@ export function calculateAverageStats(
     data: { [stat: string]: any }[],
     filter: string,
     currentMode: string
-): { [stat: string]: string | number }[] {
+): AverageStat[] {
     let avgHS: number = 0
     let avgKDR: number = 0
     let avgKDA: number = 0
@@ -156,64 +176,66 @@ export function calculateAverageStats(
     avgACS /= length || 1
     avgDD /= length || 1
 
-    let averageStats: { [statParam: string]: string | number }[] = [
+    let averageStats: AverageStat[] = [
         {
-            statName: 'HS%',
+            stat: 'HS%',
             value: avgHS.toFixed(2),
-            relative: avgHS / 25 > 1.5 ? 1.5 : (avgHS / 25).toFixed(2),
+            relative: avgHS / 25 > 1.5 ? (1.5).toString() : (avgHS / 25).toFixed(2),
         },
         {
-            statName: 'KDR',
+            stat: 'KDR',
             value: avgKDR.toFixed(2),
-            relative: avgKDR / (17.05 / 15.67) > 1.5 ? 1.5 : (avgKDR / (17.05 / 15.67)).toFixed(2),
+            relative: avgKDR / (17.05 / 15.67) > 1.5 ? (1.5).toString() : (avgKDR / (17.05 / 15.67)).toFixed(2),
         },
         {
-            statName: 'KDA',
+            stat: 'KDA',
             value: avgKDA.toFixed(2),
-            relative: avgKDA / ((17.05 + 3.53) / 15.67) > 1.5 ? 1.5 : (avgKDA / ((17.05 + 3.53) / 15.67)).toFixed(2),
+            relative:
+                avgKDA / ((17.05 + 3.53) / 15.67) > 1.5
+                    ? (1.5).toString()
+                    : (avgKDA / ((17.05 + 3.53) / 15.67)).toFixed(2),
         },
         {
-            statName: 'ADR',
+            stat: 'ADR',
             value: avgADR.toFixed(2),
             relative:
                 currentMode === 'team deathmatch'
                     ? avgADR / 4000 > 1.5
-                        ? 1.5
+                        ? (1.5).toString()
                         : (avgADR / 4000).toFixed(2)
                     : avgADR / 130 > 1.5
-                    ? 1.5
+                    ? (1.5).toString()
                     : (avgADR / 130).toFixed(2),
         },
         {
-            statName: 'ACS',
+            stat: 'ACS',
             value: avgACS.toFixed(2),
             relative:
                 currentMode === 'team deathmatch'
                     ? avgACS / 6000 > 1.5
-                        ? 1.5
+                        ? (1.5).toString()
                         : (avgACS / 6000).toFixed(2)
                     : avgACS / 238 > 1.5
-                    ? 1.5
+                    ? (1.5).toString()
                     : (avgACS / 238).toFixed(2),
         },
         {
-            statName: 'DDΔ',
+            stat: 'DDΔ',
             value: avgDD.toFixed(2),
             relative:
                 currentMode === 'team deathmatch'
                     ? avgDD / 500 > 1.5
-                        ? 1.5
+                        ? (1.5).toString()
                         : avgDD < 0
-                        ? 0
+                        ? '0'
                         : (avgDD / 500).toFixed(2)
                     : avgDD / 25 > 1.5
-                    ? 1.5
+                    ? (1.5).toString()
                     : avgDD < 0
-                    ? 0
+                    ? '0'
                     : (avgDD / 25).toFixed(2),
         },
     ]
-
     return averageStats
 }
 
@@ -250,4 +272,59 @@ export function countMatchesPerDay(
     matchDates.sort((a, b): number => new Date(a['date']).getTime() - new Date(b['date']).getTime())
 
     return matchDates
+}
+
+/**
+ * Retrieves the specified 'page' of stored match data for the player
+ *
+ * @param nameTag - The name and tag of the player you are retrieving data for in the format name#tag
+ * @param mode - The mode that the matches will be of
+ * @param region - The region that the data is from
+ * @param page - The page of data (pages of size 10)
+ * @returns
+ */
+export async function retrieveProfileData(
+    nameTag: string,
+    mode: string,
+    region: string,
+    page: number
+): Promise<MatchStat[]> {
+    if (!nameTag || !mode || !region) {
+        throw new Error('Missing required parameters')
+    }
+    if (!validateNameTag(nameTag)) {
+        throw new Error('Invalid input format')
+    }
+
+    const [name, tag] = nameTag.split('#')
+    const url = `${import.meta.env.VITE_PROFILE_API_URL}/${name}?tag=${tag}&mode=${mode.replace(
+        ' ',
+        ''
+    )}&page=${page}&region=${region.toLowerCase()}`
+
+    const response = await fetch(url, { method: 'GET' })
+
+    if (response.status === 200) {
+        return await response.json()
+    } else {
+        const errorBody = await response.json()
+        throw new Error(`Error retrieving profile data \n${errorBody.error} \nStatus Code: ${response.status}`)
+    }
+}
+
+export async function retrieveMatchData(match_id: string, region: string): Promise<MatchStat[]> {
+    if (!match_id || !region) {
+        throw new Error('Missing required parameters')
+    }
+
+    const url = `${import.meta.env.VITE_MATCH_API_URL}/${match_id}?region=${region.toLowerCase()}`
+
+    const response = await fetch(url, { method: 'GET' })
+
+    if (response.status === 200) {
+        return await response.json()
+    } else {
+        const errorBody = await response.json()
+        throw new Error(`Error retrieving match data \n${errorBody.error} \nStatus Code: ${response.status}`)
+    }
 }

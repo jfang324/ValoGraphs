@@ -1,21 +1,19 @@
-import { useEffect, useState } from 'react'
-import { Container } from 'react-bootstrap'
-import { useParams } from 'react-router-dom'
-import Header from '../../components/Header'
-import MatchDetails from '../../components/MatchDetails'
-import MatchHistory from '../../components/MatchHistory'
-import ProfileColumn from '../../components/ProfileColumn'
+import Header from '@/components/Header'
+import MatchDetails from '@/components/MatchDetails'
+import MatchHistory from '@/components/MatchHistory'
+import ProfileColumn from '@/components/ProfileColumn'
 import {
     calculateAverageStats,
-    countMatchsPerDay,
+    countMatchesPerDay,
     handleProfileSearch,
     retrieveMatchData,
     retrievePlayerData,
     retrieveProfileData,
-} from '../../utils/commonFunctions'
-
-const gameModes: string[] = ['unrated', 'competitive', 'team deathmatch']
-
+} from '@/lib/utils'
+import { MatchStat } from '@/types/matchstat'
+import { useEffect, useState } from 'react'
+import { Col, Container, Row } from 'react-bootstrap'
+import { useParams } from 'react-router-dom'
 function ProfilePage() {
     /**
      *  region, name, tag - The name and tag and region  used to initialize the profile page
@@ -29,193 +27,168 @@ function ProfilePage() {
      */
     const { region, name, tag } = useParams()
     const [currentMode, setCurrentMode] = useState('competitive')
-    const [data, setData] = useState<{ [stat: string]: any }[]>([])
+    const [matchData, setMatchData] = useState<MatchStat[]>([])
     const [filter, setFilter] = useState('')
     const [imageMap, setImageMap] = useState<{ [id: string]: string }>({})
-    const [matchDetails, setMatchDetails] = useState<{ [playerName: string]: any }[]>([])
+    const [matchDetails, setMatchDetails] = useState<MatchStat[]>([])
     const [showMatchDetails, setShowMatchDetails] = useState(false)
     const [page, setPage] = useState(1)
 
-    useEffect((): void => {
+    const updateImageMap = async (matches: MatchStat[], newImageMap: { [id: string]: string }) => {
+        if (!matches || !matches.length) return
+
+        try {
+            await Promise.all(
+                matches.map(async (match: MatchStat) => {
+                    if (match.agent in imageMap) return
+
+                    try {
+                        const assetData = await (
+                            await fetch(`${import.meta.env.VITE_AGENT_URL}/${match.agent_id}`, { method: 'GET' })
+                        ).json()
+
+                        newImageMap[match.agent] = assetData['data']['displayIcon']
+                    } catch (error) {
+                        alert(`Failed to retrieve asset data for ${match.agent}`)
+                    }
+                })
+            )
+        } catch (error) {
+            alert(error)
+        }
+    }
+
+    useEffect(() => {
+        const init = async () => {
+            if (!name || !tag || !region) {
+                alert('Required state is undefined')
+                return
+            }
+
+            try {
+                const profileData = await retrieveProfileData(`${name}#${tag}`, currentMode, region as string, page)
+                const newImageMap: { [id: string]: string } = { ...imageMap }
+
+                if (!Object.keys(newImageMap).includes('card')) {
+                    const assetData = await (
+                        await fetch(`${import.meta.env.VITE_PLAYER_CARD_URL}/${profileData[0].card_id}`, {
+                            method: 'GET',
+                        })
+                    ).json()
+
+                    newImageMap['card'] = assetData['data']['wideArt']
+                }
+
+                await updateImageMap(profileData, newImageMap)
+
+                setPage(page + 1)
+                setImageMap(newImageMap)
+                setMatchData(profileData)
+            } catch (error) {
+                alert(error)
+            }
+        }
+
         init()
     }, [])
 
-    /**
-     * Initializes the page by retrieving match data for the player and all required assets
-     */
-    async function init(): Promise<void> {
-        if (name && tag && region) {
-            let response: any = await (
-                await retrieveProfileData(name + '#' + tag, currentMode, page, region as string)
-            ).json()
-            let newImageMap: { [id: string]: string } = { ...imageMap }
+    const handleChangeMode = async (mode: string) => {
+        if (mode === currentMode) return
+
+        try {
+            const profileData = await retrieveProfileData(`${name}#${tag}`, mode, region as string, 1)
+            const newImageMap: { [id: string]: string } = { ...imageMap }
 
             if (!Object.keys(newImageMap).includes('card')) {
-                let assetData: any = await (
-                    await fetch(`${import.meta.env.VITE_PLAYER_CARD_URL}/${response[0].card_id}`, { method: 'GET' })
+                const assetData = await (
+                    await fetch(`${import.meta.env.VITE_PLAYER_CARD_URL}/${profileData[0].card_id}`, {
+                        method: 'GET',
+                    })
                 ).json()
 
                 newImageMap['card'] = assetData['data']['wideArt']
             }
 
-            for (let element of response) {
-                if (!Object.keys(imageMap).includes(element.agent)) {
-                    let assetData: any = await (
-                        await fetch(`${import.meta.env.VITE_AGENT_URL}/${element.agent_id}`, { method: 'GET' })
-                    ).json()
+            await updateImageMap(profileData, newImageMap)
 
-                    newImageMap[element.agent] = assetData['data']['displayIcon']
-                }
-            }
+            setPage(2)
+            setImageMap(newImageMap)
+            setMatchData(profileData)
+            setCurrentMode(mode)
+        } catch (error) {
+            alert(error)
+        }
+    }
 
+    const handleFilter = (filterValue: string) => setFilter(filterValue.trim())
+
+    const handleShowMatchDetails = async (match_id: string) => {
+        if (!match_id) {
+            alert('Invalid match_id')
+        }
+
+        try {
+            const allMatchPlayerData = await retrieveMatchData(match_id, region as string)
+            const newImageMap: { [id: string]: string } = { ...imageMap }
+
+            await updateImageMap(allMatchPlayerData, newImageMap)
+
+            setImageMap(newImageMap)
+            setMatchDetails(allMatchPlayerData)
+            setShowMatchDetails(true)
+        } catch (error) {
+            alert(error)
+        }
+    }
+
+    const handleLoadMatches = async () => {
+        try {
+            const newData = await retrieveProfileData(`${name}#${tag}`, currentMode, region as string, page)
+            const newImageMap: { [id: string]: string } = { ...imageMap }
+            const newMatchData = [...matchData]
+
+            await updateImageMap(newData, newImageMap)
+
+            newMatchData.push(...newData)
             setPage(page + 1)
             setImageMap(newImageMap)
-            setData(response)
-        } else {
-            alert('Invalid name and tag')
+            setMatchData(newMatchData)
+        } catch (error) {
+            alert(error)
         }
     }
 
-    /**
-     * Updates match data and asset information if the new mode is different from the current one
-     *
-     * @param mode - The mode that the new data will be associated with
-     */
-    async function handleChangeMode(mode: string): Promise<void> {
-        if (mode !== currentMode) {
-            let response: any = await (await retrieveProfileData(name + '#' + tag, mode, 1, region as string)).json()
-            let newImageMap: { [id: string]: string } = { ...imageMap }
+    const handleUpdateProfile = async () => {
+        if (!name || !tag) {
+            alert('Invalid name and tag')
+        }
+
+        try {
+            await retrievePlayerData(`${name}#${tag}`, currentMode, region as string)
+            const profileData = await retrieveProfileData(`${name}#${tag}`, currentMode, region as string, 1)
+            const newImageMap: { [id: string]: string } = { ...imageMap }
 
             if (!Object.keys(newImageMap).includes('card')) {
-                let assetData: any = await (
-                    await fetch(`${import.meta.env.VITE_PLAYER_CARD_URL}/${response[0].card_id}`, { method: 'GET' })
+                const assetData = await (
+                    await fetch(`${import.meta.env.VITE_PLAYER_CARD_URL}/${profileData[0].card_id}`, {
+                        method: 'GET',
+                    })
                 ).json()
 
                 newImageMap['card'] = assetData['data']['wideArt']
             }
 
-            for (let element of response) {
-                if (!Object.keys(imageMap).includes(element.agent)) {
-                    let assetData: any = await (
-                        await fetch(`${import.meta.env.VITE_AGENT_URL}/${element.agent_id}`, { method: 'GET' })
-                    ).json()
-
-                    newImageMap[element.agent] = assetData['data']['displayIcon']
-                }
-            }
+            await updateImageMap(profileData, newImageMap)
 
             setPage(2)
             setImageMap(newImageMap)
-            setData(response)
-            setCurrentMode(mode)
+            setMatchData(profileData)
+        } catch (error) {
+            alert(error)
         }
     }
 
-    /**
-     * Updates the filter for match entries
-     */
-    function handleFilter(): void {
-        let input: HTMLInputElement = document.getElementById('agentSearchInput') as HTMLInputElement
-
-        setFilter(input.value.trim())
-    }
-
-    /**
-     * Retrieves all the players associated with a match_id and toggles a offcanvas element
-     * to display them
-     *
-     * @param match_id - The match_id that players are being retrieved for
-     */
-    async function handleShowMatchDetails(match_id: string): Promise<void> {
-        if (match_id) {
-            let response: any = await (await retrieveMatchData(match_id, region as string)).json()
-            let newImageMap: { [id: string]: string } = { ...imageMap }
-
-            for (let element of response) {
-                if (!Object.keys(imageMap).includes(element.agent)) {
-                    let assetData: any = await (
-                        await fetch(`${import.meta.env.VITE_AGENT_URL}/${element.agent_id}`, { method: 'GET' })
-                    ).json()
-
-                    newImageMap[element.agent] = assetData['data']['displayIcon']
-                }
-            }
-
-            setImageMap(newImageMap)
-            setMatchDetails(response)
-            setShowMatchDetails(true)
-        }
-    }
-
-    /**
-     * Retrieves match data for the next page of matches and appends them to the data array
-     */
-    async function handleLoadMatches(): Promise<void> {
-        let response: any = await (
-            await retrieveProfileData(name + '#' + tag, currentMode, page, region as string)
-        ).json()
-        let newImageMap: { [id: string]: string } = { ...imageMap }
-        let newData = [...data]
-
-        for (let element of response) {
-            if (!Object.keys(imageMap).includes(element.agent)) {
-                let assetData: any = await (
-                    await fetch(`${import.meta.env.VITE_AGENT_URL}/${element.agent_id}`, { method: 'GET' })
-                ).json()
-
-                newImageMap[element.agent] = assetData['data']['displayIcon']
-            }
-        }
-
-        newData.push(...response)
-        setPage(page + 1)
-        setImageMap(newImageMap)
-        setData(newData)
-    }
-
-    /**
-     * Updates the most recent matches for the player and them retrieves the profile again with the most recent matches
-     */
-    async function handleUpdateProfile(): Promise<void> {
-        if (name && tag) {
-            await (await retrievePlayerData(name + '#' + tag, currentMode, region as string)).json()
-            let response: any = await (
-                await retrieveProfileData(name + '#' + tag, currentMode, 1, region as string)
-            ).json()
-            let newImageMap: { [id: string]: string } = { ...imageMap }
-
-            if (!Object.keys(newImageMap).includes('card')) {
-                let assetData: any = await (
-                    await fetch(`${import.meta.env.VITE_PLAYER_CARD_URL}/${response[0].card_id}`, { method: 'GET' })
-                ).json()
-
-                newImageMap['card'] = assetData['data']['wideArt']
-            }
-
-            for (let element of response) {
-                if (!Object.keys(imageMap).includes(element.agent)) {
-                    let assetData: any = await (
-                        await fetch(`${import.meta.env.VITE_AGENT_URL}/${element.agent_id}`, { method: 'GET' })
-                    ).json()
-
-                    newImageMap[element.agent] = assetData['data']['displayIcon']
-                }
-            }
-
-            setPage(2)
-            setImageMap(newImageMap)
-            setData(response)
-        } else {
-            alert('Invalid name and tag')
-        }
-    }
-
-    /**
-     * Sorts the player entries in the match details page by some parameter
-     *
-     * @param stat - The stat that player entries will be sorted by
-     */
-    function sortMatchDetails(stat: string): void {
+    const sortMatchDetails = (stat: string): void => {
         let newMatchDetails = [...matchDetails]
         switch (stat) {
             case 'name':
@@ -246,57 +219,46 @@ function ProfilePage() {
         setMatchDetails(newMatchDetails)
     }
 
-    //A javascript object that maps text to handlers, to be used by the Header component
-    //to determine what option are available in the offcanvas
-    const handlerMap: { [id: string]: any } = {
-        'Back to Homepage': '/',
-        'View Profile Page': handleProfileSearch,
-        'Change Game Mode': handleChangeMode,
-        'View GitHub Repository': import.meta.env.VITE_GITHUB_LINK,
-    }
-
     return (
-        <>
-            <Container fluid className="p-0 vh-100 overflow-y-auto">
-                <Header
-                    handlerMap={handlerMap}
-                    gameModes={gameModes}
-                    regions={[]}
-                    currentRegion={(region as string).toUpperCase()}
-                    handleChangeRegion={(dummy: string) => {
-                        dummy
-                    }}
-                ></Header>
-                <Container fluid className="p-0 d-flex flex-wrap overflow-x-hidden">
+        <Container fluid className="p-0 vh-100 d-flex flex-column overflow-x-hidden">
+            <Header
+                currentRegion={(region as string).toUpperCase()}
+                regions={[]}
+                handleProfileSearch={handleProfileSearch}
+                handleChangeMode={handleChangeMode}
+                handleChangeRegion={() => {}}
+            ></Header>
+            <Row className="flex-grow-1 m-0">
+                <Col xs={12} lg="auto" className="p-0 player-stack-col" style={{ width: '100%', maxWidth: '400px' }}>
                     <ProfileColumn
-                        mode={currentMode}
-                        nameAndTag={name + '#' + tag}
+                        nameTag={`${name}#${tag}`}
                         imageMap={imageMap}
-                        averageStats={calculateAverageStats(data, filter, currentMode)}
-                        matchDates={countMatchsPerDay(data, filter)}
+                        averageStats={calculateAverageStats(matchData, filter, currentMode)}
+                        matchFrequencies={countMatchesPerDay(matchData, filter)}
+                        mode={currentMode}
                     ></ProfileColumn>
-                    <div className="flex-fill" style={{ minWidth: '80%' }}>
-                        <MatchHistory
-                            data={data}
-                            imageMap={imageMap}
-                            handleFilter={handleFilter}
-                            filter={filter}
-                            handleShowMatchDetails={handleShowMatchDetails}
-                            handleLoadMatches={handleLoadMatches}
-                            handleUpdateProfile={handleUpdateProfile}
-                        ></MatchHistory>
-                        <MatchDetails
-                            matchDetails={matchDetails}
-                            imageMap={imageMap}
-                            sortMatchDetails={sortMatchDetails}
-                            showMatchDetails={showMatchDetails}
-                            setShowMatchDetails={setShowMatchDetails}
-                            region={region as string}
-                        ></MatchDetails>
-                    </div>
-                </Container>
-            </Container>
-        </>
+                </Col>
+                <Col xs={12} lg className="p-0 border-secondary border-2">
+                    <MatchHistory
+                        matchData={matchData}
+                        imageMap={imageMap}
+                        filter={filter}
+                        handleFilter={handleFilter}
+                        handleShowMatchDetails={handleShowMatchDetails}
+                        handleLoadMatches={handleLoadMatches}
+                        handleUpdateProfile={handleUpdateProfile}
+                    ></MatchHistory>
+                    <MatchDetails
+                        matchDetails={matchDetails}
+                        imageMap={imageMap}
+                        sortMatchDetails={sortMatchDetails}
+                        showMatchDetails={showMatchDetails}
+                        setShowMatchDetails={setShowMatchDetails}
+                        region={region as string}
+                    ></MatchDetails>
+                </Col>
+            </Row>
+        </Container>
     )
 }
 

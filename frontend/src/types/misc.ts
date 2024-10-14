@@ -10,6 +10,11 @@ export type PlayerMap = {
 
 export type AverageStat = {
     stat: string
-    value: number
-    relative: number
+    value: string
+    relative: string
+}
+
+export type MatchFrequency = {
+    date: string
+    'games played': number
 }
