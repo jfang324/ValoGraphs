@@ -1,9 +1,9 @@
 import PlayerEntry from '@/components/PlayerEntry'
 import { validateNameTag } from '@/lib/utils'
+import { PlayerMap } from '@/types/misc'
 import { useState } from 'react'
 import { Stack } from 'react-bootstrap'
 import { FaPlus } from 'react-icons/fa'
-
 /**
  * PlayerStack component props
  *
@@ -13,7 +13,7 @@ import { FaPlus } from 'react-icons/fa'
  * @params handleDelete - A generic function that deletes a player
  */
 interface PlayerStackProps {
-    playerMap: { [nameTag: string]: { region: string; visible: boolean } }
+    playerMap: PlayerMap
     handleAddPlayer: (nameTag: string) => void
     handleToggle: (nameTag: string) => void
     handleDelete: (nameTag: string) => void

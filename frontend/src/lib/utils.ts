@@ -1,3 +1,4 @@
+import { MatchStat } from '@/types/matchstat'
 /**
  * Convert a input string into a color
  *
@@ -46,7 +47,7 @@ export function validateNameTag(nameTag: string): boolean {
  * @param region - The region of the player
  * @returns A list of objects containing the player's data for recent matches
  */
-export async function retrievePlayerData(nameTag: string, mode: string, region: string) {
+export async function retrievePlayerData(nameTag: string, mode: string, region: string): Promise<MatchStat[]> {
     if (!nameTag || !mode || !region) {
         throw new Error('Missing required parameters')
     }

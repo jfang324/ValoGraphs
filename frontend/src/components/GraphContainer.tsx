@@ -1,5 +1,6 @@
 import Graph from '@/components/Graph'
 import { stringToColor } from '@/lib/utils'
+import { PlayerMap } from '@/types/misc'
 import { Col, Row } from 'react-bootstrap'
 
 /**
@@ -8,7 +9,7 @@ import { Col, Row } from 'react-bootstrap'
  * @params playerMap - A dictionary that maps player#tag to their match data & visibility
  */
 interface GraphContainerProps {
-    playerMap: { [nameTag: string]: any }
+    playerMap: PlayerMap
 }
 
 const GraphContainer = ({ playerMap }: GraphContainerProps) => {

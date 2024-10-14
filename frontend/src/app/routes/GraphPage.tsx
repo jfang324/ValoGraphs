@@ -3,15 +3,15 @@ import Header from '@/components/Header'
 import PlayerStack from '@/components/PlayerStack'
 import { regions } from '@/lib/constants'
 import { openPlayerProfile, retrievePlayerData } from '@/lib/utils'
+import { MatchStat } from '@/types/matchstat'
+import { PlayerMap } from '@/types/misc'
 import { useState } from 'react'
 import { Col, Container, Row } from 'react-bootstrap'
 
 const GraphPage = () => {
     const [currentMode, setCurrentMode] = useState('competitive')
     const [currentRegion, setCurrentRegion] = useState('NA')
-    const [playerMap, setPlayerMap] = useState<{
-        [playerName: string]: { region: string; visible: boolean; data: any[] }
-    }>({})
+    const [playerMap, setPlayerMap] = useState<PlayerMap>({})
 
     /**
      * Handles the 'search' for a player's profile
@@ -40,7 +40,7 @@ const GraphPage = () => {
     const handleChangeMode = async (mode: string) => {
         if (currentMode === mode) return
 
-        const newPlayerMap: any = {}
+        const newPlayerMap: { [nameTag: string]: { region: string; visible: boolean; data: MatchStat[] } } = {}
 
         await Promise.all(
             Object.keys(playerMap).map(async (player) => {
