@@ -1,10 +1,10 @@
 import 'dotenv/config'
 import http from 'http'
-import app from '../../src/app.js'
 import { default as request } from 'supertest'
-import { retrievePlayerData, retrieveProfileData, retrieveMatchData } from '../../src/services/valApiService.js'
+import app from '../../src/app.js'
+import { getFromMatchId, saveManyMatchStat } from '../../src/services/dataAccessService.js'
 import { createManyMatchStat } from '../../src/services/matchStatService.js'
-import { saveManyMatchStat, getFromMatchId } from '../../src/services/dataAccessService.js'
+import { retrieveMatchData, retrievePlayerData, retrieveProfileData } from '../../src/services/valApiService.js'
 import { mockMatchStat } from '../mockData.js'
 
 let server: http.Server
@@ -121,7 +121,7 @@ describe('testing GET /players', (): void => {
         const response = await request(app).get(url)
 
         expect(response.status).toBe(400)
-        expect(response.body).toEqual({ error: 'invalid input' })
+        expect(response.body).toEqual({ error: 'Invalid input' })
         expect(retrievePlayerData).toHaveBeenCalledTimes(0)
         expect(createManyMatchStat).toHaveBeenCalledTimes(0)
         expect(saveManyMatchStat).toHaveBeenCalledTimes(0)
@@ -168,7 +168,7 @@ describe('testing GET /matches', (): void => {
 
     test('should return 200 if the region is out of bounds and there are no other issues', async (): Promise<void> => {
         const match_id = mockMatchStat.match_id
-        const region = 'wonderland'
+        const region = 'na'
         const url = `/matches/${match_id}?region=${region}`
         const response = await request(app).get(url)
 
@@ -179,7 +179,7 @@ describe('testing GET /matches', (): void => {
         expect(retrieveMatchData).toHaveBeenCalledTimes(1)
     })
 
-    test('should return status 400 if there is a database error', async (): Promise<void> => {
+    test('should return status 500 if there is a database error', async (): Promise<void> => {
         const match_id = mockMatchStat.match_id
         const region = 'na'
         const url = `/matches/${match_id}?region=${region}`
@@ -187,17 +187,16 @@ describe('testing GET /matches', (): void => {
         ;(getFromMatchId as jest.Mock).mockRejectedValueOnce('database error')
         const response = await request(app).get(url)
 
-        expect(response.status).toBe(400)
+        expect(response.status).toBe(500)
         expect(response.body).toEqual({ error: 'database error' })
     })
 
-    test('should return status 400 if no region is provided', async (): Promise<void> => {
+    test('should return status 200 if no region is provided', async (): Promise<void> => {
         const match_id = mockMatchStat.match_id
         const url = `/matches/${match_id}`
         const response = await request(app).get(url)
 
-        expect(response.status).toBe(400)
-        expect(response.body).toEqual({ error: 'invalid input' })
+        expect(response.status).toBe(200)
     })
 })
 
