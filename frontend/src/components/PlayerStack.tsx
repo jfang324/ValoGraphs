@@ -4,6 +4,7 @@ import { PlayerMap } from '@/types/misc'
 import { useState } from 'react'
 import { Stack } from 'react-bootstrap'
 import { FaPlus } from 'react-icons/fa'
+
 /**
  * PlayerStack component props
  *
@@ -49,7 +50,7 @@ const PlayerStack = ({ playerMap, handleAddPlayer, handleToggle, handleDelete }:
                     handleToggle={() => handleToggle(existingNameTag)}
                     handleDelete={() => handleDelete(existingNameTag)}
                     handleSearch={() => {
-                        let [name, tag] = existingNameTag.split('#')
+                        const [name, tag] = existingNameTag.split('#')
                         window.open(
                             `/profile/${playerMap[existingNameTag].region.toLowerCase()}/${name}/${tag}`,
                             '_blank'

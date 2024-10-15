@@ -14,10 +14,11 @@ import { MatchStat } from '@/types/matchstat'
 import { useEffect, useState } from 'react'
 import { Col, Container, Row } from 'react-bootstrap'
 import { useParams } from 'react-router-dom'
-function ProfilePage() {
+
+const ProfilePage = () => {
     /**
-     *  region, name, tag - The name and tag and region  used to initialize the profile page
-     *  currentMode - The current mode being displayed, when match data is retrieved it will for matches of this type
+     *  region, name, tag - The name and tag and region used to initialize the profile page
+     *  currentMode - The current game mode being displayed
      *  data - An array of objects representing individual matches
      *  filter - The text that is going to be used to filter the matches via regex
      *  imageMap - A dictionary mapping an asset name to a link to its image
@@ -34,6 +35,7 @@ function ProfilePage() {
     const [showMatchDetails, setShowMatchDetails] = useState(false)
     const [page, setPage] = useState(1)
 
+    //Updates the image map with any new assets
     const updateImageMap = async (matches: MatchStat[], newImageMap: { [id: string]: string }) => {
         if (!matches || !matches.length) return
 
@@ -49,15 +51,18 @@ function ProfilePage() {
 
                         newImageMap[match.agent] = assetData['data']['displayIcon']
                     } catch (error) {
+                        console.log(error)
                         alert(`Failed to retrieve asset data for ${match.agent}`)
                     }
                 })
             )
         } catch (error) {
-            alert(error)
+            console.log(error)
+            alert('There was an error retrieving asset data')
         }
     }
 
+    //Initializes the profile page
     useEffect(() => {
         const init = async () => {
             if (!name || !tag || !region) {
@@ -92,6 +97,7 @@ function ProfilePage() {
         init()
     }, [])
 
+    //Handles the change of the game mode
     const handleChangeMode = async (mode: string) => {
         if (mode === currentMode) return
 
@@ -120,8 +126,10 @@ function ProfilePage() {
         }
     }
 
+    //Handles the change of the filter
     const handleFilter = (filterValue: string) => setFilter(filterValue.trim())
 
+    //Handles the opening of the match details offcanvas
     const handleShowMatchDetails = async (match_id: string) => {
         if (!match_id) {
             alert('Invalid match_id')
@@ -141,6 +149,7 @@ function ProfilePage() {
         }
     }
 
+    //Handles the loading of more matches
     const handleLoadMatches = async () => {
         try {
             const newData = await retrieveProfileData(`${name}#${tag}`, currentMode, region as string, page)
@@ -158,6 +167,7 @@ function ProfilePage() {
         }
     }
 
+    //Handles the updating of the profile
     const handleUpdateProfile = async () => {
         if (!name || !tag) {
             alert('Invalid name and tag')
@@ -188,8 +198,9 @@ function ProfilePage() {
         }
     }
 
+    //Sorts the match details by a specific stat
     const sortMatchDetails = (stat: string): void => {
-        let newMatchDetails = [...matchDetails]
+        const newMatchDetails = [...matchDetails]
         switch (stat) {
             case 'name':
                 newMatchDetails.sort((a, b): number => {
@@ -227,7 +238,7 @@ function ProfilePage() {
                 handleProfileSearch={handleProfileSearch}
                 handleChangeMode={handleChangeMode}
                 handleChangeRegion={() => {}}
-            ></Header>
+            />
             <Row className="flex-grow-1 m-0">
                 <Col xs={12} lg="auto" className="p-0 player-stack-col" style={{ width: '100%', maxWidth: '400px' }}>
                     <ProfileColumn
@@ -236,7 +247,7 @@ function ProfilePage() {
                         averageStats={calculateAverageStats(matchData, filter, currentMode)}
                         matchFrequencies={countMatchesPerDay(matchData, filter)}
                         mode={currentMode}
-                    ></ProfileColumn>
+                    />
                 </Col>
                 <Col xs={12} lg className="p-0 border-secondary border-2">
                     <MatchHistory
@@ -247,7 +258,7 @@ function ProfilePage() {
                         handleShowMatchDetails={handleShowMatchDetails}
                         handleLoadMatches={handleLoadMatches}
                         handleUpdateProfile={handleUpdateProfile}
-                    ></MatchHistory>
+                    />
                     <MatchDetails
                         matchDetails={matchDetails}
                         imageMap={imageMap}
@@ -255,7 +266,7 @@ function ProfilePage() {
                         showMatchDetails={showMatchDetails}
                         setShowMatchDetails={setShowMatchDetails}
                         region={region as string}
-                    ></MatchDetails>
+                    />
                 </Col>
             </Row>
         </Container>

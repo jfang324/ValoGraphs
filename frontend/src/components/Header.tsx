@@ -19,73 +19,65 @@ interface HeaderProps {
     handleChangeRegion: (region: string) => void
 }
 
-const Header = ({ currentRegion, regions, handleProfileSearch, handleChangeMode, handleChangeRegion }: HeaderProps) => {
-    const HomePageWidget = () => {
-        return (
-            <Nav.Link href="/" key={'home page'}>
-                Back to Homepage
-            </Nav.Link>
-        )
-    }
+const HomePageWidget = () => (
+    <Nav.Link href="/" key={'home page'}>
+        Back to Homepage
+    </Nav.Link>
+)
 
-    const ProfileSearchWidget = () => {
-        return (
-            <NavDropdown title={'View Profile Page'} key={'profile search'}>
-                <Form
-                    className="d-flex px-2 "
-                    onSubmit={(e) => {
-                        e.preventDefault()
-                        const formData = new FormData(e.currentTarget)
-                        const nameTag = formData.get('nametag') as string
-                        handleProfileSearch(nameTag, currentRegion)
+const ProfileSearchWidget = ({
+    handleProfileSearch,
+    currentRegion,
+}: Pick<HeaderProps, 'handleProfileSearch' | 'currentRegion'>) => (
+    <NavDropdown title={'View Profile Page'} key={'profile search'}>
+        <Form
+            className="d-flex px-2 "
+            onSubmit={(e) => {
+                e.preventDefault()
+                const formData = new FormData(e.currentTarget)
+                const nameTag = formData.get('nametag') as string
+                handleProfileSearch(nameTag, currentRegion)
+            }}
+        >
+            <Form.Control
+                name="nametag"
+                type="search"
+                spellCheck="false"
+                placeholder="player name#tag"
+                className="me-2"
+                aria-label="Search"
+            />
+            <Button variant="outline-danger" type="submit">
+                Search
+            </Button>
+        </Form>
+    </NavDropdown>
+)
+
+const GameModeWidget = ({ handleChangeMode }: Pick<HeaderProps, 'handleChangeMode'>) => (
+    <NavDropdown title={'Change Game Mode'} id={`offcanvasNavbarDropdown-expand-${false}`} key={'change mode'}>
+        {gameModes.map((mode: string, index: number) => {
+            return (
+                <NavDropdown.Item
+                    key={index}
+                    onClick={() => {
+                        handleChangeMode(mode)
                     }}
                 >
-                    <Form.Control
-                        name="nametag"
-                        type="search"
-                        spellCheck="false"
-                        placeholder="player name#tag"
-                        className="me-2"
-                        aria-label="Search"
-                    />
-                    <Button variant="outline-danger" type="submit">
-                        Search
-                    </Button>
-                </Form>
-            </NavDropdown>
-        )
-    }
+                    {mode}
+                </NavDropdown.Item>
+            )
+        })}
+    </NavDropdown>
+)
 
-    const GameModeWidget = () => {
-        return (
-            <NavDropdown title={'Change Game Mode'} id={`offcanvasNavbarDropdown-expand-${false}`} key={'change mode'}>
-                {gameModes.map((mode: string, index: number) => {
-                    return (
-                        <NavDropdown.Item
-                            key={index}
-                            onClick={() => {
-                                handleChangeMode(mode)
-                            }}
-                        >
-                            {mode}
-                        </NavDropdown.Item>
-                    )
-                })}
-            </NavDropdown>
-        )
-    }
+const GitHubWidget = () => (
+    <Nav.Link href={import.meta.env.VITE_GITHUB_LINK || 'https://github.com/jfang324/ValoGraphs'} key={'github'}>
+        View GitHub Repository
+    </Nav.Link>
+)
 
-    const GitHubWidget = () => {
-        return (
-            <Nav.Link
-                href={import.meta.env.VITE_GITHUB_LINK || 'https://github.com/jfang324/ValoGraphs'}
-                key={'github'}
-            >
-                View GitHub Repository
-            </Nav.Link>
-        )
-    }
-
+const Header = ({ currentRegion, regions, handleProfileSearch, handleChangeMode, handleChangeRegion }: HeaderProps) => {
     return (
         <Navbar expand={false} variant="dark" bg="black">
             <Container fluid style={{ fontFamily: 'Courier New, monospace', color: 'white' }}>
@@ -137,8 +129,8 @@ const Header = ({ currentRegion, regions, handleProfileSearch, handleChangeMode,
                 <Offcanvas.Body className="pt-0">
                     <Nav>
                         <HomePageWidget />
-                        <ProfileSearchWidget />
-                        <GameModeWidget />
+                        <ProfileSearchWidget handleProfileSearch={handleProfileSearch} currentRegion={currentRegion} />
+                        <GameModeWidget handleChangeMode={handleChangeMode} />
                         <GitHubWidget />
                     </Nav>
                 </Offcanvas.Body>

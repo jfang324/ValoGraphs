@@ -1,6 +1,27 @@
 import { calculateDateDiff } from '@/lib/utils'
 import { Image, Stack } from 'react-bootstrap'
 
+/**
+ * MatchEntry component props
+ *
+ * @params agentLink - The link to the agent's portrait
+ * @params map - The map the match was played on
+ * @params kills - The number of kills
+ * @params deaths - The number of deaths
+ * @params assists - The number of assists
+ * @params hs - The headshot percentage
+ * @params dd - The damage dealt
+ * @params adr - The average damage received
+ * @params acs - The average contribution score
+ * @params date - The date the match was played
+ * @params mode - The mode the match was played in
+ * @params won - A boolean representing if the player won the match
+ * @params rounds_blue_won - The number of rounds the blue team won
+ * @params rounds_red_won - The number of rounds the red team won
+ * @params side - The side the match was played on
+ * @params match_id - The match id
+ * @params handleShowMatchDetails - A function that opens the match details offcanvas
+ */
 interface MatchEntryProps {
     agentLink: string
     map: string
@@ -20,6 +41,24 @@ interface MatchEntryProps {
     match_id: string
     handleShowMatchDetails: () => void
 }
+
+const formatDate = (date: Date) => {
+    const diff = calculateDateDiff(new Date(), new Date(date))
+    if (diff === 0) return 'Today'
+    if (diff === 1) return '1 day ago'
+    return `${diff} days ago`
+}
+
+const StatDisplay = ({ label, value }: { label: string; value: number | string }) => {
+    return (
+        <Stack direction="vertical" gap={1} style={statStyle}>
+            <div className="w-100">{label}</div>
+            <div className="w-100">{value}</div>
+        </Stack>
+    )
+}
+
+const statStyle = { width: '10%' }
 
 export default function MatchEntry({
     agentLink,
@@ -52,7 +91,7 @@ export default function MatchEntry({
             onClick={handleShowMatchDetails}
         >
             <div className={`vr p-1 ${won ? 'text-bg-success' : 'text-bg-danger'}`}></div>
-            <Stack direction="horizontal" className="d-flex flex-wrap flex-fill" onClick={handleShowMatchDetails}>
+            <Stack direction="horizontal" className="d-flex flex-wrap flex-fill">
                 <Stack direction="horizontal" className="flex-fill">
                     <Image rounded src={agentLink} height={60} className="p-2"></Image>
                     <Stack className="my-auto" gap={1}>
@@ -70,30 +109,14 @@ export default function MatchEntry({
                 <Stack direction="horizontal" className="my-auto text-center flex-fill" style={{ minWidth: '80%' }}>
                     <Stack direction="vertical" gap={1} style={{ minWidth: '20%' }}>
                         <div className="w-100">K / D / A</div>
-                        <div className="w-100">{kills + ' / ' + deaths + ' / ' + assists}</div>
+                        <div className="w-100">{`${kills} / ${deaths} / ${assists}`}</div>
                     </Stack>
-                    <Stack direction="vertical" gap={1} style={{ width: '10%' }}>
-                        <div className="w-100">HS %</div>
-                        <div className="w-100">{hs}</div>
-                    </Stack>
-                    <Stack direction="vertical" gap={1} style={{ width: '10%' }}>
-                        <div className="w-100">DD Δ</div>
-                        <div className="w-100">{Math.round(dd)}</div>
-                    </Stack>
-                    <Stack direction="vertical" gap={1} style={{ width: '10%' }}>
-                        <div className="w-100">ADR</div>
-                        <div className="w-100">{Math.round(adr)}</div>
-                    </Stack>
-                    <Stack direction="vertical" gap={1} style={{ width: '10%' }}>
-                        <div className="w-100">ACS</div>
-                        <div className="w-100">{Math.round(acs)}</div>
-                    </Stack>
+                    <StatDisplay label="HS %" value={hs} />
+                    <StatDisplay label="DD Δ" value={Math.round(dd)} />
+                    <StatDisplay label="ADR" value={Math.round(adr)} />
+                    <StatDisplay label="ACS" value={Math.round(acs)} />
                     <Stack direction="vertical" className="my-auto" gap={1} style={{ width: '15%' }}>
-                        {calculateDateDiff(new Date(), date) === 1
-                            ? calculateDateDiff(new Date(), date) + ' day ago'
-                            : calculateDateDiff(new Date(), date) === 0
-                            ? 'Today'
-                            : calculateDateDiff(new Date(), date) + ' days ago'}
+                        {formatDate(date)}
                     </Stack>
                 </Stack>
             </Stack>

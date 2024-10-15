@@ -15,7 +15,7 @@ import {
  * Graph component props
  *
  * @params playerColors - A dictionary mapping player#tag to colors
- * @params matchData - A list of objects representing 'matches'. Each object maps player#tag to their stat value for that match
+ * @params matchData - A list of objects representing 'matches'. Each object maps player#tag to their stat value for that match for some number of players
  * @params unit - The unit of the stat
  * @params title - The title of the graph
  * @params reference - A reference value to compare against

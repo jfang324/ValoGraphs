@@ -3,6 +3,17 @@ import { MatchStat } from '@/types/matchstat'
 import { Button, Form, Stack } from 'react-bootstrap'
 import { LuRefreshCw } from 'react-icons/lu'
 
+/**
+ *  MatchHistory component props
+ *
+ * @params matchData - A list of MatchStat objects representing the match performance of a player
+ * @params imageMap - A dictionary mapping an asset name to a link to its image
+ * @params filter - The text that is going to be used to filter the matches via regex
+ * @params handleFilter - A function that changes the filter
+ * @params handleShowMatchDetails - A function that opens the match details offcanvas
+ * @params handleLoadMatches - A function that loads more matches
+ * @params handleUpdateProfile - A function that updates the profile
+ */
 interface MatchHistoryProps {
     matchData: MatchStat[]
     imageMap: { [id: string]: string }
@@ -59,7 +70,7 @@ export default function MatchHistory({
                     </Button>
                 </Stack>
                 <div className="border-bottom border-secondary border-2">
-                    {matchData.map((match: any) => {
+                    {matchData.map((match: MatchStat) => {
                         const agentRegex = new RegExp(filter, 'i')
                         const mapRegex = new RegExp(filter, 'i')
 

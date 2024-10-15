@@ -23,25 +23,29 @@ const GraphPage = () => {
 
         const newPlayerMap: { [nameTag: string]: { region: string; visible: boolean; data: MatchStat[] } } = {}
 
-        await Promise.all(
-            Object.keys(playerMap).map(async (player) => {
-                newPlayerMap[player] = {
-                    visible: playerMap[player].visible,
-                    region: playerMap[player].region,
-                    data: [],
-                }
+        try {
+            await Promise.all(
+                Object.keys(playerMap).map(async (player) => {
+                    newPlayerMap[player] = {
+                        visible: playerMap[player].visible,
+                        region: playerMap[player].region,
+                        data: [],
+                    }
 
-                try {
-                    const playerData = await retrievePlayerData(player, mode, playerMap[player].region)
-                    newPlayerMap[player].data = playerData
-                } catch (error) {
-                    alert(`Failed to retrieve ${mode} data for ${player}`)
-                }
-            })
-        )
+                    try {
+                        const playerData = await retrievePlayerData(player, mode, playerMap[player].region)
+                        newPlayerMap[player].data = playerData
+                    } catch (error) {
+                        console.log(error)
+                    }
+                })
+            )
 
-        setPlayerMap(newPlayerMap)
-        setCurrentMode(mode)
+            setPlayerMap(newPlayerMap)
+            setCurrentMode(mode)
+        } catch (error) {
+            alert(error)
+        }
     }
 
     /**
@@ -57,13 +61,9 @@ const GraphPage = () => {
      * @param nameTag - The name and tag of the player in the format name#tag
      */
     const handleAddPlayer = async (nameTag: string) => {
-        if (!nameTag || !currentMode || !currentRegion) {
-            alert('Missing required parameters')
-            return
-        }
-
         try {
             const playerData = await retrievePlayerData(nameTag, currentMode, currentRegion)
+
             setPlayerMap((prev) => ({
                 ...prev,
                 [nameTag]: { visible: true, data: playerData, region: currentRegion },
@@ -73,6 +73,7 @@ const GraphPage = () => {
                 ...prev,
                 [nameTag]: { visible: true, data: [], region: currentRegion },
             }))
+
             alert(error)
         }
     }

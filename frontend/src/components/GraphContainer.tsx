@@ -1,5 +1,6 @@
 import Graph from '@/components/Graph'
 import { stringToColor } from '@/lib/utils'
+import { MatchStat } from '@/types/matchstat'
 import { PlayerMap } from '@/types/misc'
 import { Col, Row } from 'react-bootstrap'
 
@@ -22,7 +23,7 @@ const GraphContainer = ({ playerMap }: GraphContainerProps) => {
         { title: 'Difference between damage dealt and received per round', unit: 'DD Δ', reference: 0, dataKey: 'dd' },
     ]
 
-    //split the data into a dictionary mapping name to color and a list of objects where each object represents a match
+    //split the data into a dictionary mapping name to color and a list of objects which map a player to their stat value for that match
     const prepareData = (dataKey: string) => {
         const matchData: { [nameTag: string]: number }[] = []
         const playersColors: { [nameTag: string]: string } = {}
@@ -31,7 +32,7 @@ const GraphContainer = ({ playerMap }: GraphContainerProps) => {
             if (!playerData.visible) return
 
             playersColors[nameTag] = stringToColor(nameTag)
-            playerData.data.forEach((match: any, i: number) => {
+            playerData.data.forEach((match: MatchStat, i: number) => {
                 if (i >= matchData.length) {
                     matchData.push({ matchNum: i + 1 })
                 }
