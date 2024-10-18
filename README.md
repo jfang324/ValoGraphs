@@ -66,13 +66,27 @@ Now once the prerequisites are met there just follow the steps below.
     VITE_AGENT_URL = 'https://valorant-api.com/v1/agents'
     ```
 
-5. Go into the backend and frontend directories and start the development servers
+5. Go into the backend directory build and start the backend server
 
     ```sh
-    npm run dev
+    npm run build
+    npm run start
     ```
 
-6. In the console where frontend development server was started type 'o' and 'enter' to open a tab with the client
+6. Go into the frontend directory and build and preview the frontend
+
+    ```sh
+    npm run build
+    npm run preview
+    ```
+
+7. Open your browser and navigate to the link vite provides you (for me it was localhost:4173)
+
+8. If you want to run the tests navigate to the backend directory and run:
+
+    ```sh
+    npm run test
+    ```
 
 ## Gallery & Demonstrations
 
