@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { MatchStat } from '../entities/MatchStat'
-import { createManyMatchStat } from '../services/matchStatService'
-import { retrieveProfileData } from '../services/valApiService'
+import { createManyMatchStat } from '../services/matchStatService.js'
+import { retrieveProfileData } from '../services/valApiService.js'
 
 const validModes = ['unrated', 'competitive', 'teamdeathmatch']
 const validRegions = ['na', 'eu', 'latam', 'br', 'ap', 'kr']

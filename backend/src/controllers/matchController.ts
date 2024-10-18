@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
-import { getFromMatchId, saveManyMatchStat } from '../services/dataAccessService'
-import { createManyMatchStat } from '../services/matchStatService'
-import { retrieveMatchData } from '../services/valApiService'
+import { getFromMatchId, saveManyMatchStat } from '../services/dataAccessService.js'
+import { createManyMatchStat } from '../services/matchStatService.js'
+import { retrieveMatchData } from '../services/valApiService.js'
 
 const validRegions = ['na', 'eu', 'latam', 'br', 'ap', 'kr']
 

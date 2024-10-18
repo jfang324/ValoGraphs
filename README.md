@@ -33,7 +33,7 @@ Now once the prerequisites are met there just follow the steps below.
     git clone https://github.com/Jeffery-Fang/ValoGraphs.git
     ```
 
-2. Install NPM packages in the frontend and backend directories
+2. Install NPM packages in the frontend and backend directories (make sure you run the command in both directories)
 
     ```sh
     npm install
